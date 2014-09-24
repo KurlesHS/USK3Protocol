@@ -1,4 +1,5 @@
 # coding=utf-8
+from duplicity.pexpect import searcher_re
 
 from twisted.internet.task import LoopingCall
 from twisted.internet.protocol import Protocol, connectionDone
@@ -78,10 +79,12 @@ class Usk3Protocol(Protocol):
                     command = self.shared_command_data.commands_in_process[packet_id]
                     if isinstance(command, Usk3Packet):
                         if command.callback_func is not None:
-                            command.callback_func(command)
+                            command.callback_func(packet)
                     del self.shared_command_data.commands_in_process[packet_id]
             else:
                 self.shared_command_data.inform_about_incoming_packet(packet)
+                # даём отклик
+                # self.transport.write(str(Usk3Packet(packet.module_number, 0x00)))
             self.parse_received_data()
 
     def connectionLost(self, reason=connectionDone):
@@ -104,6 +107,7 @@ class Usk3Protocol(Protocol):
             del self.shared_command_data.command_queue[:]
 
     def check_commands_ttl(self):
+        #print len(self.shared_command_data.commands_in_process)
         commands_to_delete = list()
         for command_id, command in self.shared_command_data.commands_in_process.iteritems():
             if isinstance(command, Usk3Packet):

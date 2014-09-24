@@ -23,6 +23,12 @@ class Usk3Packet(object):
             self.packet_id = uuid.uuid4().hex
         else:
             self.packet_id = packet_id
+        id_len = len(self.packet_id)
+        if id_len > 32:
+            self.packet_id = self.packet_id[:32]
+        elif id_len < 32:
+            delta = 32 - id_len
+            self.packet_id += ' ' * delta
         self.sent_time = None
 
     def set_current_timestamp(self):
@@ -71,7 +77,9 @@ class Usk3Packet(object):
         expected_crc = get_number_from_bytearray(raw_data[self.length - 2:self.length])
         real_crc = crc16_ccitt(str(raw_data[:self.length - 2]))
         if expected_crc == real_crc:
-            self.packet_data = raw_data[0x29:0x29 + self.length - 0x2b]
+            data_len = self.length - 0x2b
+            self.packet_data = raw_data[0x29:(0x29 + data_len)]
+            xxx = len(self.packet_data)
             self.state = Usk3Packet.CORRECT_PACKET
         else:
             self.state = Usk3Packet.INCORRECT_PACKET
